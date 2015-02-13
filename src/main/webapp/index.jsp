@@ -83,7 +83,16 @@ body {
 				 * At this point you should parse and persist the info.
 				 */
 
-				out.println(helper.getUserInfoJson(request.getParameter("code")));
+				//out.println(helper.getUserInfoJson(request.getParameter("code")));
+
+                /*
+                 * GoogleAuthHelper()#getUserUnreadEmails(String) method
+                 * returns a String containing the authenticated user's latest
+                 * unread emails.
+                 */
+
+                //out.println(helper.getUserUnreadEmails(request.getParameter("code")));
+                out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
 
 				out.println("</pre>");
 			}
