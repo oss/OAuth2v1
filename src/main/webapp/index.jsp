@@ -92,7 +92,14 @@ body {
                  */
 
                 //out.println(helper.getUserUnreadEmails(request.getParameter("code")));
-                out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
+
+                /*
+                 * Create RequestFactory Instance
+                 */
+                helper.generateRequestFactory(request.getParameter("code"));
+                //out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
+                out.println(helper.formatXml(helper.TESTgetUserUnreadEmails()));
+				out.println(helper.TESTgetUserInfoJson());
 
 				out.println("</pre>");
 			}

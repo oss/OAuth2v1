@@ -60,6 +60,8 @@ public final class GoogleAuthHelper {
 	private String stateToken;
 	
 	private final GoogleAuthorizationCodeFlow flow;
+
+    private HttpRequestFactory requestFactory;
 	
 	/**
 	 * Constructor initializes the Google Authorization Code Flow with CLIENT ID, SECRET, and SCOPE 
@@ -98,6 +100,13 @@ public final class GoogleAuthHelper {
 	public String getStateToken(){
 		return stateToken;
 	}
+
+    public void generateRequestFactory(final String authCode) throws IOException {
+		final GoogleTokenResponse response = flow.newTokenRequest(authCode).setRedirectUri(CALLBACK_URI).execute();
+		final Credential credential = flow.createAndStoreCredential(response, null);
+		requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
+    }
+
 	
 	/**
 	 * Expects an Authentication Code, and makes an authenticated request for the user's profile information
@@ -128,6 +137,26 @@ public final class GoogleAuthHelper {
 		final GoogleTokenResponse response = flow.newTokenRequest(authCode).setRedirectUri(CALLBACK_URI).execute();
 		final Credential credential = flow.createAndStoreCredential(response, null);
 		final HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
+		// Make an authenticated request
+		final GenericUrl url = new GenericUrl(USER_INBOX_URL);
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+
+		return jsonIdentity;
+    }
+
+	public String TESTgetUserInfoJson() throws IOException {
+		// Make an authenticated request
+		final GenericUrl url = new GenericUrl(USER_INFO_URL);
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+
+        return jsonIdentity;
+    }
+
+    public String TESTgetUserUnreadEmails() throws IOException{
 		// Make an authenticated request
 		final GenericUrl url = new GenericUrl(USER_INBOX_URL);
 		final HttpRequest request = requestFactory.buildGetRequest(url);
