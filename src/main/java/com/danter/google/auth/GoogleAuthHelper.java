@@ -26,6 +26,27 @@ import org.xml.sax.InputSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
+//Libraries for contacts
+//  Used to get output as xml
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+
+import java.net.URL;
+import java.net.URLConnection;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+//JSON Libraries
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 
 /**
  * A helper class for Google's OAuth2 authentication API.
@@ -47,12 +68,22 @@ public final class GoogleAuthHelper {
 	 * Callback URI that google will redirect to after successful authentication
 	 */
     private static final String CALLBACK_URI = "http://localhost:8080/OAuth2v1/index.jsp";
+
+    /* Contacts API Scopes:
+     * https://www.google.com/m8/feeds read/write access to Contacts and Contact Groups
+     * https://www.googleapis.com/auth/contacts.readonly read-only access to Contacts and Contact Groups
+     */
 	
 	// start google authentication constants
-	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom".split(";"));
+	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom;https://www.googleapis.com/auth/drive.readonly;https://www.googleapis.com/auth/contacts.readonly;https://www.googleapis.com/auth/calendar.readonly".split(";"));
 	private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
     // user's email url
     private static final String USER_INBOX_URL = "https://mail.google.com/mail/feed/atom";
+    // user's drive url
+    private static final String USER_DRIVE_URL = "https://www.googleapis.com/drive/v2";
+    // user's calendar url
+    private static final String USER_CALENDAR_URL = "https://www.googleapis.com/calendar/v3";
+    private static final String USER_CONTACTS_URL = "https://www.google.com/m8/feeds/contacts";
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	// end google authentication constants
@@ -107,62 +138,104 @@ public final class GoogleAuthHelper {
 		requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
     }
 
-	
-	/**
-	 * Expects an Authentication Code, and makes an authenticated request for the user's profile information
-	 * @return JSON formatted user profile information
-	 * @param authCode authentication code provided by google
-	 */
-	public String getUserInfoJson(final String authCode) throws IOException {
-
-		final GoogleTokenResponse response = flow.newTokenRequest(authCode).setRedirectUri(CALLBACK_URI).execute();
-		final Credential credential = flow.createAndStoreCredential(response, null);
-		final HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
+	public String getUserInfo() throws IOException {
 		// Make an authenticated request
 		final GenericUrl url = new GenericUrl(USER_INFO_URL);
 		final HttpRequest request = requestFactory.buildGetRequest(url);
 		request.getHeaders().setContentType("application/json");
 		final String jsonIdentity = request.execute().parseAsString();
-
-		return jsonIdentity;
-
-	}
-
-    /**
-     * Follow the format for getUserInfoJson to get user info on their gmail
-     * inbox emails
-     */
-
-    public String getUserUnreadEmails(final String authCode) throws IOException{
-		final GoogleTokenResponse response = flow.newTokenRequest(authCode).setRedirectUri(CALLBACK_URI).execute();
-		final Credential credential = flow.createAndStoreCredential(response, null);
-		final HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
-		// Make an authenticated request
-		final GenericUrl url = new GenericUrl(USER_INBOX_URL);
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-
-		return jsonIdentity;
-    }
-
-	public String TESTgetUserInfoJson() throws IOException {
-		// Make an authenticated request
-		final GenericUrl url = new GenericUrl(USER_INFO_URL);
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-
         return jsonIdentity;
     }
 
-    public String TESTgetUserUnreadEmails() throws IOException{
+    public String getUnreadEmails() throws IOException{
 		// Make an authenticated request
 		final GenericUrl url = new GenericUrl(USER_INBOX_URL);
 		final HttpRequest request = requestFactory.buildGetRequest(url);
 		request.getHeaders().setContentType("application/json");
 		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    }
+    
+    public String getFiles() throws IOException{
+		// Make an authenticated request
+		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
+		final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/files");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    }
 
+    public String getContacts() throws IOException{
+		// Make an authenticated request
+		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
+        //HttpClient client = new DefaultHttpClient();
+		//final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full");
+		//final HttpRequest request = requestFactory.buildGetRequest(url);
+		//request.getHeaders().setContentType("application/json");
+	    ////final String jsonIdentity = request.execute().parseAsString();
+		////return jsonIdentity;
+        //HttpResponse response = client.execute(request);
+        //HttpEntity entity = response.getEntity();
+        //String content = EntityUtils.toString(entity);
+        //return content;
+        String temp = "";
+        URL obj = new URL(USER_CONTACTS_URL+"/default/full");
+        URLConnection conn = obj.openConnection();
+        BufferedReader in = new BufferedReader(
+                                new InputStreamReader(
+                                conn.getInputStream()));
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) 
+            temp += inputLine;
+        in.close();
+        
+        return temp;
+    }
+
+    public String getCalendarList() throws IOException{
+		// Make an authenticated request
+		final GenericUrl url = new GenericUrl(USER_CALENDAR_URL+"/users/me/calendarList");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    }
+    
+    public String getCalendarEvents() throws IOException{
+        int i = 0;
+        String id = "";
+        JSONParser parser = new JSONParser();
+        JSONArray array = new JSONArray();
+        JSONObject json = new JSONObject();
+        Object obj = new Object();
+        String calendardata = getCalendarList();
+        try {
+            obj = parser.parse(calendardata);
+        } catch (Exception e){
+            return e.getMessage();
+        }
+        json = (JSONObject)obj;
+        array = (JSONArray)json.get("items");
+        //This value 0 must be hardcoded -> 
+        for(i = 0;;++i)
+        {
+            json = (JSONObject)array.get(i);
+            try{
+                if ((Boolean)json.get("primary"))
+                {
+                    break;
+                }
+            }catch (Exception e){
+                return e.getMessage();
+            }
+        }
+        json = (JSONObject)array.get(i);
+        id = (String)json.get("id");
+		final GenericUrl url = new GenericUrl(USER_CALENDAR_URL+"/calendars/"+id+"/events");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
 		return jsonIdentity;
     }
 
@@ -182,8 +255,5 @@ public final class GoogleAuthHelper {
              return xml;
          }   
      }   
-
-
-	
 
 }

@@ -98,8 +98,12 @@ body {
                  */
                 helper.generateRequestFactory(request.getParameter("code"));
                 //out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
-                out.println(helper.formatXml(helper.TESTgetUserUnreadEmails()));
-				out.println(helper.TESTgetUserInfoJson());
+                //out.println(helper.formatXml(helper.getUserUnreadEmails()));
+				//out.println(helper.getUserInfo());
+				//out.println(helper.getContacts());
+                out.println(helper.getCalendarEvents());
+                //out.println(helper.getCalendarList());
+				//out.println(helper.getFiles());
 
 				out.println("</pre>");
 			}
