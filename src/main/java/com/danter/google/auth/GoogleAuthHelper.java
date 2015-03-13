@@ -47,6 +47,12 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+//Date + Time Library
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 
 /**
  * A helper class for Google's OAuth2 authentication API.
@@ -73,7 +79,7 @@ public final class GoogleAuthHelper {
      * https://www.google.com/m8/feeds read/write access to Contacts and Contact Groups
      * https://www.googleapis.com/auth/contacts.readonly read-only access to Contacts and Contact Groups
      */
-	
+
 	// start google authentication constants
 	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom;https://www.googleapis.com/auth/drive.readonly;https://www.googleapis.com/auth/contacts.readonly;https://www.googleapis.com/auth/calendar.readonly".split(";"));
 	private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
@@ -87,44 +93,44 @@ public final class GoogleAuthHelper {
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	// end google authentication constants
-	
+
 	private String stateToken;
-	
+
 	private final GoogleAuthorizationCodeFlow flow;
 
     private HttpRequestFactory requestFactory;
-	
+
 	/**
-	 * Constructor initializes the Google Authorization Code Flow with CLIENT ID, SECRET, and SCOPE 
+	 * Constructor initializes the Google Authorization Code Flow with CLIENT ID, SECRET, and SCOPE
 	 */
 	public GoogleAuthHelper() {
 		flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
 				JSON_FACTORY, CLIENT_ID, CLIENT_SECRET, SCOPE).build();
-		
+
 		generateStateToken();
 	}
 
 	/**
-	 * Builds a login URL based on client ID, secret, callback URI, and scope 
+	 * Builds a login URL based on client ID, secret, callback URI, and scope
 	 */
 	public String buildLoginUrl() {
-		
+
 		final GoogleAuthorizationCodeRequestUrl url = flow.newAuthorizationUrl();
-		
+
 		return url.setRedirectUri(CALLBACK_URI).setState(stateToken).build();
 	}
-	
+
 	/**
-	 * Generates a secure state token 
+	 * Generates a secure state token
 	 */
 	private void generateStateToken(){
-		
+
 		SecureRandom sr1 = new SecureRandom();
-		
+
 		stateToken = "google;"+sr1.nextInt();
-		
+
 	}
-	
+
 	/**
 	 * Accessor for state token
 	 */
@@ -155,7 +161,7 @@ public final class GoogleAuthHelper {
 		final String jsonIdentity = request.execute().parseAsString();
 		return jsonIdentity;
     }
-    
+
     public String getFiles() throws IOException{
 		// Make an authenticated request
 		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
@@ -186,10 +192,10 @@ public final class GoogleAuthHelper {
                                 new InputStreamReader(
                                 conn.getInputStream()));
         String inputLine;
-        while ((inputLine = in.readLine()) != null) 
+        while ((inputLine = in.readLine()) != null)
             temp += inputLine;
         in.close();
-        
+
         return temp;
     }
 
@@ -201,7 +207,7 @@ public final class GoogleAuthHelper {
 		final String jsonIdentity = request.execute().parseAsString();
 		return jsonIdentity;
     }
-    
+
     public String getCalendarEvents() throws IOException{
         int i = 0;
         String id = "";
@@ -217,7 +223,7 @@ public final class GoogleAuthHelper {
         }
         json = (JSONObject)obj;
         array = (JSONArray)json.get("items");
-        //This value 0 must be hardcoded -> 
+        //This value 0 must be hardcoded ->
         for(i = 0;;++i)
         {
             json = (JSONObject)array.get(i);
@@ -239,6 +245,70 @@ public final class GoogleAuthHelper {
 		return jsonIdentity;
     }
 
+    public String getCurrentWeekCalendarEvents(String calendarEvents) throws IOException{
+        String currentDate = "";
+        String endOfTheWeek = "";
+        String startDate = "";
+
+        JSONParser parser = new JSONParser();
+        JSONArray array = new JSONArray();
+        JSONObject json = new JSONObject();
+        JSONObject startDateJsonObject = new JSONObject();
+        Object obj = new Object();
+
+        Calendar today = Calendar.getInstance();
+        Calendar sunday = Calendar.getInstance();
+        Calendar eventDate = Calendar.getInstance();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        sunday.add(Calendar.DATE, 7);
+
+        //DateFormat format = 
+        //    DateFormat.getDateTimeInstance(
+        //    DateFormat.MEDIUM, DateFormat.SHORT); 
+        //SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"); // spec for RFC3339
+        //try{
+        //    currentDate = s.format(nowDate);
+        //}catch (Exception e){
+        //    return e.getMessage();
+        //}
+        
+        //Retrieving events Json Array from Json Object
+        try {
+            obj = parser.parse(calendarEvents);
+        }catch(Exception e){
+            return e.getMessage();
+        }
+        json = (JSONObject)obj;
+        array = (JSONArray)json.get("items");
+
+        //Parsing through Json Array for events which fall in the scope of the
+        //current week
+        for(int i = 0;;++i)
+        {
+            try{
+                json = (JSONObject)array.get(i);
+            }catch (Exception e){
+                break;
+            }
+            startDateJsonObject = (JSONObject)json.get("start");
+            startDate = (String)startDateJsonObject.get("date");
+            try{
+                eventDate.setTime(sdf.parse(startDate));
+            }catch(Exception e){
+                return e.getMessage();
+            }
+            if (eventDate.compareTo(today) == 1){
+                continue;
+            }
+            if (eventDate.compareTo(sunday) == -1){
+                continue;
+            }
+            
+        }
+        return "";
+    }
+
     public String formatXml(String xml){
          try{
              Transformer serializer= SAXTransformerFactory.newInstance().newTransformer();
@@ -247,13 +317,13 @@ public final class GoogleAuthHelper {
              serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
              //serializer.setOutputProperty("{http://xml.customer.org/xslt}indent-amount", "2");
              Source xmlSource=new SAXSource(new InputSource(new ByteArrayInputStream(xml.getBytes())));
-             StreamResult res =  new StreamResult(new ByteArrayOutputStream());                
+             StreamResult res =  new StreamResult(new ByteArrayOutputStream());
              serializer.transform(xmlSource, res);
              return new String(((ByteArrayOutputStream)res.getOutputStream()).toByteArray());
-        }catch(Exception e){ 
+        }catch(Exception e){
              //TODO log error
              return xml;
-         }   
-     }   
+         }
+     }
 
 }
