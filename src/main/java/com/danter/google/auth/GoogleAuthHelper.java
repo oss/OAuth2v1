@@ -52,7 +52,7 @@ import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-
+import java.time.format.DateTimeFormatter;
 
 /**
  * A helper class for Google's OAuth2 authentication API.
@@ -245,6 +245,7 @@ public final class GoogleAuthHelper {
 		return jsonIdentity;
     }
 
+    @SuppressWarnings("unchecked")
     public String getCurrentWeekCalendarEvents(String calendarEvents) throws IOException{
         String currentDate = "";
         String endOfTheWeek = "";
@@ -252,6 +253,7 @@ public final class GoogleAuthHelper {
 
         JSONParser parser = new JSONParser();
         JSONArray array = new JSONArray();
+        JSONArray result = new JSONArray();
         JSONObject json = new JSONObject();
         JSONObject startDateJsonObject = new JSONObject();
         Object obj = new Object();
@@ -259,25 +261,25 @@ public final class GoogleAuthHelper {
         Calendar today = Calendar.getInstance();
         Calendar sunday = Calendar.getInstance();
         Calendar eventDate = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        //SimpleDateFormat sdfRFC = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        sunday.add(Calendar.DATE, 7);
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.add(Calendar.DAY_OF_WEEK,-(today.get(Calendar.DAY_OF_WEEK)-1));
 
-        //DateFormat format = 
-        //    DateFormat.getDateTimeInstance(
-        //    DateFormat.MEDIUM, DateFormat.SHORT); 
-        //SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"); // spec for RFC3339
-        //try{
-        //    currentDate = s.format(nowDate);
-        //}catch (Exception e){
-        //    return e.getMessage();
-        //}
+        sunday.set(Calendar.DAY_OF_WEEK,Calendar.SUNDAY);
+        sunday.set(Calendar.HOUR_OF_DAY, 0);
+        sunday.set(Calendar.MINUTE, 0);
+        sunday.set(Calendar.SECOND, 0);
+        sunday.add(Calendar.DATE,7);
         
         //Retrieving events Json Array from Json Object
         try {
             obj = parser.parse(calendarEvents);
         }catch(Exception e){
-            return e.getMessage();
+            return "GoogleAuthHelper.java-> line 282: "+e.getMessage();
         }
         json = (JSONObject)obj;
         array = (JSONArray)json.get("items");
@@ -291,22 +293,29 @@ public final class GoogleAuthHelper {
             }catch (Exception e){
                 break;
             }
-            startDateJsonObject = (JSONObject)json.get("start");
-            startDate = (String)startDateJsonObject.get("date");
+            if ((startDateJsonObject = (JSONObject)json.get("start")) == null){
+                continue;
+            }
+            if ((startDate = (String)startDateJsonObject.get("date")) == null){
+                if ((startDate = (String)startDateJsonObject.get("dateTime")) == null){
+                    continue;
+                }
+            }
             try{
                 eventDate.setTime(sdf.parse(startDate));
             }catch(Exception e){
-                return e.getMessage();
+                return "GoogleAuthHelper.java-> line 307: "+e.getMessage();
             }
-            if (eventDate.compareTo(today) == 1){
+            if (eventDate.compareTo(today) == -1){
                 continue;
             }
-            if (eventDate.compareTo(sunday) == -1){
+            if (eventDate.compareTo(sunday) == 1){
                 continue;
             }
-            
+            //Add current JSON event to result JSON Array
+            result.add(json);
         }
-        return "";
+        return result.toString();
     }
 
     public String formatXml(String xml){
