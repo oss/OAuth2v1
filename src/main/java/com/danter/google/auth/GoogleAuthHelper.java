@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-//Used for pretty printing xml
+//XML Pretty Printing Libraries
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -47,12 +47,12 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-//Date + Time Library
-import java.util.Date;
-import java.text.DateFormat;
+//JSON Pretty Printing Library
+import org.codehaus.jackson.map.ObjectMapper;
+
+//Date + Time Libraries
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.time.format.DateTimeFormatter;
 
 /**
  * A helper class for Google's OAuth2 authentication API.
@@ -81,7 +81,7 @@ public final class GoogleAuthHelper {
      */
 
 	// start google authentication constants
-	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom;https://www.googleapis.com/auth/drive.readonly;https://www.googleapis.com/auth/contacts.readonly;https://www.googleapis.com/auth/calendar.readonly".split(";"));
+	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom;https://www.googleapis.com/auth/drive.readonly;https://www.googleapis.com/auth/contacts.readonly;https://www.googleapis.com/auth/calendar.readonly;https://www.googleapis.com/auth/webmasters.readonly".split(";"));
 	private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
     // user's email url
     private static final String USER_INBOX_URL = "https://mail.google.com/mail/feed/atom";
@@ -90,6 +90,7 @@ public final class GoogleAuthHelper {
     // user's calendar url
     private static final String USER_CALENDAR_URL = "https://www.googleapis.com/calendar/v3";
     private static final String USER_CONTACTS_URL = "https://www.google.com/m8/feeds/contacts";
+    private static final String USER_WEBMASTER_URL = "https://www.googleapis.com/webmasters/v3";
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	// end google authentication constants
@@ -172,6 +173,16 @@ public final class GoogleAuthHelper {
 		return jsonIdentity;
     }
 
+    public String getWebmasterToolsSites() throws IOException{
+		// Make an authenticated request
+		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
+		final GenericUrl url = new GenericUrl(USER_WEBMASTER_URL+"/sites");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    }
+
     public String getContacts() throws IOException{
 		// Make an authenticated request
 		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
@@ -185,18 +196,28 @@ public final class GoogleAuthHelper {
         //HttpEntity entity = response.getEntity();
         //String content = EntityUtils.toString(entity);
         //return content;
-        String temp = "";
-        URL obj = new URL(USER_CONTACTS_URL+"/default/full");
-        URLConnection conn = obj.openConnection();
-        BufferedReader in = new BufferedReader(
-                                new InputStreamReader(
-                                conn.getInputStream()));
-        String inputLine;
-        while ((inputLine = in.readLine()) != null)
-            temp += inputLine;
-        in.close();
 
-        return temp;
+
+        //String temp = "";
+        //URL obj = new URL(USER_CONTACTS_URL+"/default/full");
+        //URLConnection conn = obj.openConnection();
+        //BufferedReader in = new BufferedReader(
+        //                        new InputStreamReader(
+        //                        conn.getInputStream()));
+        //String inputLine;
+        //while ((inputLine = in.readLine()) != null)
+        //    temp += inputLine;
+        //in.close();
+
+        //return temp;
+        
+
+		final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full/339c39c8c0dc79c");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    
     }
 
     public String getCalendarList() throws IOException{
@@ -216,6 +237,7 @@ public final class GoogleAuthHelper {
         JSONObject json = new JSONObject();
         Object obj = new Object();
         String calendardata = getCalendarList();
+
         try {
             obj = parser.parse(calendardata);
         } catch (Exception e){
@@ -223,7 +245,6 @@ public final class GoogleAuthHelper {
         }
         json = (JSONObject)obj;
         array = (JSONArray)json.get("items");
-        //This value 0 must be hardcoded ->
         for(i = 0;;++i)
         {
             json = (JSONObject)array.get(i);
@@ -306,19 +327,26 @@ public final class GoogleAuthHelper {
             }catch(Exception e){
                 return "GoogleAuthHelper.java-> line 307: "+e.getMessage();
             }
-            if (eventDate.compareTo(today) == -1){
-                continue;
-            }
-            if (eventDate.compareTo(sunday) == 1){
+            if (eventDate.compareTo(today) == -1 || eventDate.compareTo(sunday) == 1){
                 continue;
             }
             //Add current JSON event to result JSON Array
             result.add(json);
         }
-        return result.toString();
+        return prettyPrintJSON(result.toString());
     }
 
-    public String formatXml(String xml){
+    public String prettyPrintJSON(String json){
+        ObjectMapper mapper = new ObjectMapper();
+        try{
+            Object ppJson = mapper.readValue(json, Object.class);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ppJson);
+        }catch(Exception e){
+            return "GoogleAuthHelper.java-> line 324: "+e.getMessage();
+        }
+    }
+
+    public String prettyPrintXML(String xml){
          try{
              Transformer serializer= SAXTransformerFactory.newInstance().newTransformer();
              serializer.setOutputProperty(OutputKeys.INDENT, "yes");

@@ -100,11 +100,11 @@ body {
                 //out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
                 //out.println(helper.formatXml(helper.getUserUnreadEmails()));
 				//out.println(helper.getUserInfo());
+				out.println(helper.getWebmasterToolsSites());
 				//out.println(helper.getContacts());
                 //out.println(helper.getCalendarEvents());
-                out.println("THIS WEEK'S EVENTS START HERE:");
-                out.println(helper.getCurrentWeekCalendarEvents(helper.getCalendarEvents()));
-                //out.println(helper.getCalendarList());
+                //out.println("THIS WEEK'S EVENTS START HERE:");
+                //out.println(helper.getCurrentWeekCalendarEvents(helper.getCalendarEvents()));
 
 				out.println("</pre>");
 			}
