@@ -1,5 +1,10 @@
 <%@page import="com.danter.google.auth.GoogleAuthHelper"%>
-<%@page import="com.danter.google.auth.GoogleCalendar"%>
+<%@page import="com.danter.google.auth.GoogleCalendarAPI"%>
+<%@page import="com.danter.google.auth.GoogleDriveAPI"%>
+<%@page import="com.danter.google.auth.GoogleWebmasterAPI"%>
+<%@page import="com.danter.google.auth.GoogleContactsAPI"%>
+<%@page import="com.danter.google.auth.GoogleUserInfoAPI"%>
+<%@page import="com.danter.google.auth.GoogleAtomFeedAPI"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
     "http://www.w3.org/TR/html4/loose.dtd">
@@ -74,26 +79,33 @@ body {
 				 * At this point you should parse and persist the info.
 				 */
 
-				//out.println(helper.getUserInfoJson(request.getParameter("code")));
-
-                /*
-                 * GoogleAuthHelper()#getUserUnreadEmails(String) method
-                 * returns a String containing the authenticated user's latest
-                 * unread emails.
-                 */
-
-                //out.println(helper.getUserUnreadEmails(request.getParameter("code")));
-
-                /*
-                 * Create RequestFactory Instance
-                 */
+                /* Create RequestFactory Instance */
                 helper.generateRequestFactory(request.getParameter("code"));
-                final GoogleCalendar calendar = new GoogleCalendar(helper);
-				out.println(helper.getWebmasterToolsSites());
+                final GoogleCalendarAPI calendar = new GoogleCalendarAPI(helper);
+                final GoogleWebmasterAPI webmaster = new GoogleWebmasterAPI(helper); 
+                final GoogleContactsAPI contacts = new GoogleContactsAPI(helper); 
+                final GoogleUserInfoAPI userinfo = new GoogleUserInfoAPI(helper); 
+                final GoogleAtomFeedAPI atomfeed = new GoogleAtomFeedAPI(helper); 
+                final GoogleDriveAPI drive = new GoogleDriveAPI(helper); 
+
+                out.println("Webmaster API:");
+                out.println(webmaster.getWebmasterToolsSites());
+                out.println();
+                out.println("Contacts API:");
+                out.println(contacts.getContacts());
+                out.println();
+                out.println("UserInfo API:");
+                out.println(userinfo.getUserInfo());
+                out.println();
+                out.println("AtomFeed API:");
+                out.println(atomfeed.getUnreadEmails());
+                out.println();
+                out.println("Drive API:");
+                out.println(drive.getFiles());
+                out.println();
+                out.println("Calendar API:");
                 out.println(calendar.getCurrentWeekCalendarEvents());
 
-                //out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
-                //out.println(helper.formatXml(helper.getUserUnreadEmails()));
 				out.println("</pre>");
 			}
 		%>

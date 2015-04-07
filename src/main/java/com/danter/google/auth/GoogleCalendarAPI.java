@@ -16,18 +16,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-public final class GoogleCalendar{
+public final class GoogleCalendarAPI{
 
     // user's calendar url
     private static final String USER_CALENDAR_URL = "https://www.googleapis.com/calendar/v3";
-	private String stateToken;
     public GoogleAuthHelper helper;
 
-    public GoogleCalendar() {
+    public GoogleCalendarAPI() {
         helper = new GoogleAuthHelper();
     }
     
-    public GoogleCalendar(GoogleAuthHelper GoogleAuthObj) {
+    public GoogleCalendarAPI(GoogleAuthHelper GoogleAuthObj) {
         helper = GoogleAuthObj;
     }
 
