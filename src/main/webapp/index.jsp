@@ -1,4 +1,5 @@
 <%@page import="com.danter.google.auth.GoogleAuthHelper"%>
+<%@page import="com.danter.google.auth.GoogleCalendar"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
     "http://www.w3.org/TR/html4/loose.dtd">
@@ -53,25 +54,15 @@ body {
 			 */
 			final GoogleAuthHelper helper = new GoogleAuthHelper();
 
-			if (request.getParameter("code") == null
-					|| request.getParameter("state") == null) {
+			if (request.getParameter("code") == null || request.getParameter("state") == null) {
+			    /* initial visit to the page */
+				out.println("<a href='" + helper.buildLoginUrl() + "'>log in with google</a>");
 
-				/*
-				 * initial visit to the page
-				 */
-				out.println("<a href='" + helper.buildLoginUrl()
-						+ "'>log in with google</a>");
-						
-				/*
-				 * set the secure state token in session to be able to track what we sent to google
-				 */
+				/* set the secure state token in session to be able to track what we sent to google */
 				session.setAttribute("state", helper.getStateToken());
 
-			} else if (request.getParameter("code") != null && request.getParameter("state") != null
-					&& request.getParameter("state").equals(session.getAttribute("state"))) {
-
-				session.removeAttribute("state");
-
+		    } else if (request.getParameter("code") != null && request.getParameter("state") != null && request.getParameter("state").equals(session.getAttribute("state"))) {
+                session.removeAttribute("state");
 				out.println("<pre>");
 				/*
 				 * Executes after google redirects to the callback url.
@@ -97,15 +88,12 @@ body {
                  * Create RequestFactory Instance
                  */
                 helper.generateRequestFactory(request.getParameter("code"));
+                final GoogleCalendar calendar = new GoogleCalendar(helper);
+				out.println(helper.getWebmasterToolsSites());
+                out.println(calendar.getCurrentWeekCalendarEvents());
+
                 //out.println(helper.formatXml(helper.getUserUnreadEmails(request.getParameter("code"))));
                 //out.println(helper.formatXml(helper.getUserUnreadEmails()));
-				//out.println(helper.getUserInfo());
-				out.println(helper.getWebmasterToolsSites());
-				//out.println(helper.getContacts());
-                //out.println(helper.getCalendarEvents());
-                //out.println("THIS WEEK'S EVENTS START HERE:");
-                //out.println(helper.getCurrentWeekCalendarEvents(helper.getCalendarEvents()));
-
 				out.println("</pre>");
 			}
 		%>

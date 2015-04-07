@@ -61,80 +61,64 @@ import java.util.Calendar;
  */
 public final class GoogleAuthHelper {
 
-	/**
-	 * Please provide a value for the CLIENT_ID constant before proceeding, set this up at https://code.google.com/apis/console/
+	/*
+     * Provide a value for the CLIENT_ID and CLIENT_SECRET constant before proceeding, set this up at https://code.google.com/apis/console/
 	 */
-	private static final String CLIENT_ID = "enter your client id here";
-	/**
-	 * Please provide a value for the CLIENT_SECRET constant before proceeding, set this up at https://code.google.com/apis/console/
-	 */
-	private static final String CLIENT_SECRET = "enter your client secret here";
+	private static final String CLIENT_ID = "";
+	private static final String CLIENT_SECRET = "";
 
-	/**
-	 * Callback URI that google will redirect to after successful authentication
-	 */
+	/* Callback URI that google will redirect to after successful authentication */
     private static final String CALLBACK_URI = "http://localhost:8080/OAuth2v1/index.jsp";
 
-    /* Contacts API Scopes:
-     * https://www.google.com/m8/feeds read/write access to Contacts and Contact Groups
-     * https://www.googleapis.com/auth/contacts.readonly read-only access to Contacts and Contact Groups
-     */
-
 	// start google authentication constants
+	//private static final Iterable<String> SCOPE = Arrays.asList(
+    //    "https://www.googleapis.com/auth/userinfo.profile;"+
+    //    "https://www.googleapis.com/auth/userinfo.email;"+
+    //    "https://mail.google.com/mail/feed/atom;"+
+    //    "https://www.googleapis.com/auth/drive.readonly;"+
+    //    "https://www.googleapis.com/auth/contacts.readonly;"+
+    //    "https://www.googleapis.com/auth/calendar.readonly;"+
+    //    "https://www.googleapis.com/auth/webmasters.readonly".split(";"));
+    
 	private static final Iterable<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email;https://mail.google.com/mail/feed/atom;https://www.googleapis.com/auth/drive.readonly;https://www.googleapis.com/auth/contacts.readonly;https://www.googleapis.com/auth/calendar.readonly;https://www.googleapis.com/auth/webmasters.readonly".split(";"));
-	private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
-    // user's email url
+    /* API Scopes */
+    private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
     private static final String USER_INBOX_URL = "https://mail.google.com/mail/feed/atom";
-    // user's drive url
     private static final String USER_DRIVE_URL = "https://www.googleapis.com/drive/v2";
-    // user's calendar url
     private static final String USER_CALENDAR_URL = "https://www.googleapis.com/calendar/v3";
     private static final String USER_CONTACTS_URL = "https://www.google.com/m8/feeds/contacts";
     private static final String USER_WEBMASTER_URL = "https://www.googleapis.com/webmasters/v3";
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	// end google authentication constants
+    /* Contacts API Scopes:
+     * https://www.google.com/m8/feeds read/write access to Contacts and Contact Groups
+     * https://www.googleapis.com/auth/contacts.readonly read-only access to Contacts and Contact Groups
+     */
 
 	private String stateToken;
-
 	private final GoogleAuthorizationCodeFlow flow;
+    HttpRequestFactory requestFactory;
 
-    private HttpRequestFactory requestFactory;
-
-	/**
-	 * Constructor initializes the Google Authorization Code Flow with CLIENT ID, SECRET, and SCOPE
-	 */
-	public GoogleAuthHelper() {
-		flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
-				JSON_FACTORY, CLIENT_ID, CLIENT_SECRET, SCOPE).build();
-
+	/* Constructor initializes the Google Authorization Code Flow with CLIENT ID, SECRET, and SCOPE */
+    public GoogleAuthHelper() {
+		flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, CLIENT_ID, CLIENT_SECRET, SCOPE).build();
 		generateStateToken();
 	}
 
-	/**
-	 * Builds a login URL based on client ID, secret, callback URI, and scope
-	 */
+	/* Builds a login URL based on client ID, secret, callback URI, and scope */
 	public String buildLoginUrl() {
-
 		final GoogleAuthorizationCodeRequestUrl url = flow.newAuthorizationUrl();
-
 		return url.setRedirectUri(CALLBACK_URI).setState(stateToken).build();
 	}
 
-	/**
-	 * Generates a secure state token
-	 */
+	/* Generates a secure state token */
 	private void generateStateToken(){
-
 		SecureRandom sr1 = new SecureRandom();
-
 		stateToken = "google;"+sr1.nextInt();
-
 	}
 
-	/**
-	 * Accessor for state token
-	 */
+	/* Accessor for state token */
 	public String getStateToken(){
 		return stateToken;
 	}
@@ -145,88 +129,36 @@ public final class GoogleAuthHelper {
 		requestFactory = HTTP_TRANSPORT.createRequestFactory(credential);
     }
 
-	public String getUserInfo() throws IOException {
+    public String accessAPI(String APIurl) throws IOException{
 		// Make an authenticated request
-		final GenericUrl url = new GenericUrl(USER_INFO_URL);
+		final GenericUrl url = new GenericUrl(APIurl);
 		final HttpRequest request = requestFactory.buildGetRequest(url);
 		request.getHeaders().setContentType("application/json");
 		final String jsonIdentity = request.execute().parseAsString();
         return jsonIdentity;
+
+    }
+
+	public String getUserInfo() throws IOException {
+        return accessAPI(USER_INFO_URL);
     }
 
     public String getUnreadEmails() throws IOException{
-		// Make an authenticated request
-		final GenericUrl url = new GenericUrl(USER_INBOX_URL);
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-		return jsonIdentity;
+        return accessAPI(USER_INBOX_URL);
     }
 
     public String getFiles() throws IOException{
-		// Make an authenticated request
 		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
-		final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/files");
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-		return jsonIdentity;
+        return accessAPI(USER_DRIVE_URL+"/files");
     }
 
     public String getWebmasterToolsSites() throws IOException{
-		// Make an authenticated request
-		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
-		final GenericUrl url = new GenericUrl(USER_WEBMASTER_URL+"/sites");
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-		return jsonIdentity;
+        return accessAPI(USER_WEBMASTER_URL+"/sites");
     }
 
-    public String getContacts() throws IOException{
-		// Make an authenticated request
-		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
-        //HttpClient client = new DefaultHttpClient();
-		//final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full");
-		//final HttpRequest request = requestFactory.buildGetRequest(url);
-		//request.getHeaders().setContentType("application/json");
-	    ////final String jsonIdentity = request.execute().parseAsString();
-		////return jsonIdentity;
-        //HttpResponse response = client.execute(request);
-        //HttpEntity entity = response.getEntity();
-        //String content = EntityUtils.toString(entity);
-        //return content;
-
-
-        //String temp = "";
-        //URL obj = new URL(USER_CONTACTS_URL+"/default/full");
-        //URLConnection conn = obj.openConnection();
-        //BufferedReader in = new BufferedReader(
-        //                        new InputStreamReader(
-        //                        conn.getInputStream()));
-        //String inputLine;
-        //while ((inputLine = in.readLine()) != null)
-        //    temp += inputLine;
-        //in.close();
-
-        //return temp;
-        
-
-		final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full/339c39c8c0dc79c");
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-		return jsonIdentity;
-    
-    }
-
+    /*
     public String getCalendarList() throws IOException{
-		// Make an authenticated request
-		final GenericUrl url = new GenericUrl(USER_CALENDAR_URL+"/users/me/calendarList");
-		final HttpRequest request = requestFactory.buildGetRequest(url);
-		request.getHeaders().setContentType("application/json");
-		final String jsonIdentity = request.execute().parseAsString();
-		return jsonIdentity;
+        return accessAPI(USER_CALENDAR_URL+"/users/me/calendarList");
     }
 
     public String getCalendarEvents() throws IOException{
@@ -361,6 +293,47 @@ public final class GoogleAuthHelper {
              //TODO log error
              return xml;
          }
-     }
+    }*/
+
+    /*
+     * Under Construction:
+     * The API does not output the contacts -> only the contact object ids
+     */
+    public String getContacts() throws IOException{
+		// Make an authenticated request
+		//final GenericUrl url = new GenericUrl(USER_DRIVE_URL+"/about");
+        //HttpClient client = new DefaultHttpClient();
+		//final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full");
+		//final HttpRequest request = requestFactory.buildGetRequest(url);
+		//request.getHeaders().setContentType("application/json");
+	    ////final String jsonIdentity = request.execute().parseAsString();
+		////return jsonIdentity;
+        //HttpResponse response = client.execute(request);
+        //HttpEntity entity = response.getEntity();
+        //String content = EntityUtils.toString(entity);
+        //return content;
+
+
+        //String temp = "";
+        //URL obj = new URL(USER_CONTACTS_URL+"/default/full");
+        //URLConnection conn = obj.openConnection();
+        //BufferedReader in = new BufferedReader(
+        //                        new InputStreamReader(
+        //                        conn.getInputStream()));
+        //String inputLine;
+        //while ((inputLine = in.readLine()) != null)
+        //    temp += inputLine;
+        //in.close();
+
+        //return temp;
+        
+
+		final GenericUrl url = new GenericUrl(USER_CONTACTS_URL+"/default/full/339c39c8c0dc79c");
+		final HttpRequest request = requestFactory.buildGetRequest(url);
+		request.getHeaders().setContentType("application/json");
+		final String jsonIdentity = request.execute().parseAsString();
+		return jsonIdentity;
+    
+    }
 
 }
